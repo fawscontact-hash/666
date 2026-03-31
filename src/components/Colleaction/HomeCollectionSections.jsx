@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDiscountRules } from "@/hooks/useDiscountRules";
+import { useProducts } from "@/context/ProductsContext";
 
 // ── Product Card ──────────────────────────────────────────────────────────────
 
@@ -117,7 +118,7 @@ function CollectionSection({ collection, allProducts, formatPrice, t, getDiscoun
 // Renders products from ONE specific collection by title.
 
 export function SingleCollectionSection({ collectionTitle, collectionId, productLimit = 8, customTitle = "", showViewMore = true }) {
-  const [allProducts, setAllProducts] = useState([]);
+  const allProducts = useProducts();
   const [collection,  setCollection]  = useState(null);
   const [loading,     setLoading]     = useState(true);
   const { formatPrice, t } = useLanguage();
@@ -125,17 +126,14 @@ export function SingleCollectionSection({ collectionTitle, collectionId, product
 
   useEffect(() => {
     if (!collectionTitle && !collectionId) { setLoading(false); return; }
-    Promise.all([
-      fetch("/api/collection", { cache: "no-store" }).then(r => r.ok ? r.json() : []),
-      fetch("/api/product",    { cache: "no-store" }).then(r => r.ok ? r.json() : []),
-    ])
-      .then(([cols, prods]) => {
+    fetch("/api/collection", { next: { revalidate: 60 } })
+      .then(r => r.ok ? r.json() : [])
+      .then((cols) => {
         const col = cols.find(c =>
           (collectionId && (c._id || c.id) === collectionId) ||
           (collectionTitle && c.title.toLowerCase() === collectionTitle.toLowerCase())
         );
         setCollection(col || null);
-        setAllProducts(Array.isArray(prods) ? prods : []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -195,28 +193,18 @@ export function SingleCollectionSection({ collectionTitle, collectionId, product
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function HomeCollectionSections() {
+  const allProducts = useProducts();
   const [collections,  setCollections]  = useState([]);
-  const [allProducts,  setAllProducts]  = useState([]);
   const [loading,      setLoading]      = useState(true);
   const { formatPrice, t } = useLanguage();
   const { getDiscount } = useDiscountRules();
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [colRes, prodRes] = await Promise.all([
-          fetch("/api/collection?homepage=true", { cache: "no-store" }),
-          fetch("/api/product",                  { cache: "no-store" }),
-        ]);
-        if (colRes.ok)  setCollections(await colRes.json());
-        if (prodRes.ok) setAllProducts(await prodRes.json());
-      } catch (e) {
-        console.error("HomeCollectionSections fetch error:", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    fetch("/api/collection?homepage=true", { next: { revalidate: 60 } })
+      .then(r => r.ok ? r.json() : [])
+      .then(setCollections)
+      .catch(e => console.error("HomeCollectionSections fetch error:", e))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading || collections.length === 0) return null;

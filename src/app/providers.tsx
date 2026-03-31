@@ -7,6 +7,7 @@ import CartDrawer from "@/components/CartDrawer";
 import { UIControlProvider } from "@/context/UIControlContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { SettingsProvider } from "@/context/SettingsContext";
+import { ProductsProvider } from "@/context/ProductsContext";
 
 function CartDrawerWrapper() {
   const { cartDrawerOpen, setCartDrawerOpen } = useCartDrawer();
@@ -25,10 +26,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <HeroUIProvider>
         <SettingsProvider>
           <UIControlProvider>
-            <CartProvider>
-              {children}
-              <CartDrawerWrapper />
-            </CartProvider>
+            <ProductsProvider>
+              <CartProvider>
+                {children}
+                <CartDrawerWrapper />
+              </CartProvider>
+            </ProductsProvider>
           </UIControlProvider>
         </SettingsProvider>
       </HeroUIProvider>

@@ -1,3 +1,5 @@
+export const revalidate = 300; // cache GET responses for 5 minutes
+
 /**
  * /api/spin-wheel-config
  * GET  — public config for storefront (isEnabled check)

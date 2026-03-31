@@ -1,3 +1,5 @@
+export const revalidate = 300; // cache GET responses for 5 minutes (slider/banners change rarely)
+
 /**
  * /api/data
  * ─────────────────────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { ShoppingCart, Search, Heart, Star } from "lucide-react";
 import Link from "next/link";
 import { useUIControl } from "@/hooks/useUIControl";
 import { useLanguage } from "@/context/LanguageContext";
+import { useSetting } from "@/context/SettingsContext";
 import LanguageSwitcher from "@/components/template/LanguageSwitcher";
 
 export default function FullHeader() {
@@ -18,7 +19,7 @@ export default function FullHeader() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
-  const [storeSettings, setStoreSettings] = useState(null);
+  const { data: storeSettings } = useSetting("store"); // from shared SettingsContext — no extra fetch
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,25 +38,14 @@ export default function FullHeader() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [menuRes, settingsRes] = await Promise.all([
-          fetch("/api/data?collection=menu-item", {}),
-          fetch("/api/setting?type=store", {}),
-        ]);
-
+        const menuRes = await fetch("/api/data?collection=menu-item", { next: { revalidate: 300 } });
         if (menuRes.ok) {
           const menuData = await menuRes.json();
           const sorted = [...menuData].sort((a, b) => (a.position ?? 9999) - (b.position ?? 9999));
           setMenuItems(sorted);
         }
-
-        if (settingsRes.ok) {
-          const settingsData = await settingsRes.json();
-          if (settingsData && Object.keys(settingsData).length > 0) {
-            setStoreSettings(settingsData);
-          }
-        }
       } catch (err) {
-        console.error("Failed to load data:", err);
+        console.error("Failed to load menu:", err);
       } finally {
         setIsLoading(false);
       }

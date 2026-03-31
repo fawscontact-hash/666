@@ -1,3 +1,5 @@
+export const revalidate = 300; // cache GET responses for 5 minutes (UI settings change rarely)
+
 /**
  * /api/ui-control
  * ─────────────────────────────────────────────────────────────────────────────

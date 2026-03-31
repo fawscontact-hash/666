@@ -15,6 +15,7 @@
  */
 
 import { useEffect } from "react";
+import { useProducts } from "@/context/ProductsContext";
 
 function getImageUrl(images) {
   if (!images) return "";
@@ -28,9 +29,11 @@ function getImageUrl(images) {
 }
 
 export default function GiftSystemInit() {
+  const contextProducts = useProducts();
+
   useEffect(() => {
     let gifts = [];
-    let products = [];
+    let products = contextProducts; // use shared context — no extra fetch
     let initialized = false;
     let syncing = false;
 
@@ -103,12 +106,9 @@ export default function GiftSystemInit() {
 
     const init = async () => {
       try {
-        const [giftsRes, productsRes] = await Promise.all([
-          fetch("/api/gifts"),
-          fetch("/api/product"),
-        ]);
+        const giftsRes = await fetch("/api/gifts", { next: { revalidate: 120 } });
         if (giftsRes.ok) gifts = await giftsRes.json();
-        if (productsRes.ok) products = await productsRes.json();
+        // products already loaded from ProductsContext — no extra fetch needed
         initialized = true;
         syncGifts(); // run once immediately after loading
       } catch (e) {

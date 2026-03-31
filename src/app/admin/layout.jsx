@@ -1,5 +1,6 @@
 "use client";
 
+import "suneditor/dist/css/suneditor.min.css";
 import { useState } from "react";
 import SideBar from "@/components/admin/SideBar";
 import Header from "@/components/admin/Header";

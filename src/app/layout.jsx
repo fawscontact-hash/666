@@ -1,7 +1,6 @@
 import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import "suneditor/dist/css/suneditor.min.css";
 import MainFooterWrapper from "@/components/template/FooterClientWrapper";
 import MainHeaderWrapper from "@/components/template/MainHeaderWrapper";
 import ScriptInjector from "@/components/ScriptInjector";

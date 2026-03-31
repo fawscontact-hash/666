@@ -1,3 +1,5 @@
+export const revalidate = 60; // cache GET responses for 60 seconds (ISR)
+
 /**
  * /api/product
  * ─────────────────────────────────────────────────────────────────────────────

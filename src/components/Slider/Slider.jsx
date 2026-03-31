@@ -38,10 +38,9 @@ export default function StyleOne() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const ts = Date.now();
         const [sliderRes, promoRes] = await Promise.all([
-          fetch(`/api/data?collection=${COLLECTION}&_t=${ts}`,       { cache: "no-store" }),
-          fetch(`/api/data?collection=${PROMO_COLLECTION}&_t=${ts}`, { cache: "no-store" }),
+          fetch(`/api/data?collection=${COLLECTION}`,       { next: { revalidate: 300 } }),
+          fetch(`/api/data?collection=${PROMO_COLLECTION}`, { next: { revalidate: 300 } }),
         ]);
 
         const sliderData = await sliderRes.json();

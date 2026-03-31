@@ -1,3 +1,5 @@
+export const revalidate = 120; // cache GET responses for 2 minutes
+
 import prisma from "@/lib/prisma";
 
 export async function GET() {

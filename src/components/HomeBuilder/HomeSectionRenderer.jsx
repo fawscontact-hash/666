@@ -1,16 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+// ── Critical above-fold components (loaded immediately) ───────────────────────
 import Slider            from "@/components/Slider/Slider";
-import SliderCollection  from "@/components/Colleaction/SliderCollection";
 import ProductGrid       from "@/components/Product/ProductGrid";
-import HomeCollectionSections, { SingleCollectionSection } from "@/components/Colleaction/HomeCollectionSections";
-import VideoReels        from "@/components/VideoReels";
-import SupportBenefits   from "@/components/SupportBenefits";
-import HomeFeedbackSection from "@/components/HomeFeedbackSection";
 import { useLanguage }   from "@/context/LanguageContext";
-import ShoppableReels      from "@/components/ShoppableReels";
-import BeforeAfterSlider   from "@/components/BeforeAfterSlider";
+
+// ── Below-fold components (lazy loaded) ───────────────────────────────────────
+const SliderCollection  = dynamic(() => import("@/components/Colleaction/SliderCollection"), { ssr: false });
+const HomeCollectionSections = dynamic(() => import("@/components/Colleaction/HomeCollectionSections").then(m => ({ default: m.default })), { ssr: false });
+const SingleCollectionSection = dynamic(() => import("@/components/Colleaction/HomeCollectionSections").then(m => ({ default: m.SingleCollectionSection })), { ssr: false });
+const VideoReels        = dynamic(() => import("@/components/VideoReels"), { ssr: false });
+const ShoppableReels    = dynamic(() => import("@/components/ShoppableReels"), { ssr: false });
+const BeforeAfterSlider = dynamic(() => import("@/components/BeforeAfterSlider"), { ssr: false });
+const SupportBenefits   = dynamic(() => import("@/components/SupportBenefits"), { ssr: false });
+const HomeFeedbackSection = dynamic(() => import("@/components/HomeFeedbackSection"), { ssr: false });
 
 // ── Countdown section ─────────────────────────────────────────────────────────
 function CountdownTimer({ targetDate }) {
@@ -209,7 +215,7 @@ export default function HomeSectionRenderer() {
   const [sections, setSections] = useState(null);
 
   useEffect(() => {
-    fetch("/api/setting?type=homepage_layout", { cache: "no-store" })
+    fetch("/api/setting?type=homepage_layout", { next: { revalidate: 60 } })
       .then(r => r.ok ? r.json() : {})
       .then(d => setSections(Array.isArray(d?.sections) ? d.sections : null))
       .catch(() => setSections(null));

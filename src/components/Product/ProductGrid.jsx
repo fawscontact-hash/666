@@ -8,35 +8,20 @@ import { Button } from "@heroui/react";
 import { useCart } from "@/hooks/useCart";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDiscountRules } from "@/hooks/useDiscountRules";
+import { useProducts } from "@/context/ProductsContext";
 
 export default function StyleOne() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const allProducts = useProducts();
+  const products = allProducts; // already loaded from shared context
+  const loading = allProducts.length === 0;
   const [wishlist, setWishlist] = useState([]);
   const { addToCart, isAddingToCart } = useCart();
   const { t, formatPrice } = useLanguage();
   const { getDiscount } = useDiscountRules();
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch("/api/product");
-        if (!res.ok) throw new Error("Network response was not ok");
-        const data = await res.json();
-        setProducts(Array.isArray(data) && data.length > 0 ? data : []);
-      } catch (err) {
-        console.error("Failed to fetch products:", err);
-        setError("Failed to load products");
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     const savedWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
     setWishlist(savedWishlist);
-    fetchProducts();
   }, []);
 
   const navigateProduct = (product, e) => {
