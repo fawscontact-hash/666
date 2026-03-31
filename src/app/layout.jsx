@@ -11,6 +11,8 @@ import SpinWheelProvider from "@/components/SpinWheel/SpinWheelProvider";
 import GiftSystemInit from "@/components/GiftSystem/GiftSystemInit";
 import { getStoreSettings } from "@/lib/getStoreSettings";
 import { Suspense } from "react";
+import prisma from "@/lib/prisma";
+import { UI_DEFAULTS } from "@/lib/ui-defaults";
 
 // Rubik supports both Latin and Arabic scripts — load both subsets
 const rubik = Rubik({
@@ -32,7 +34,21 @@ export async function generateMetadata() {
   };
 }
 
-export default function RootLayout({ children }) {
+async function getUISettings() {
+  try {
+    const rows = await prisma.uIControlSetting.findMany();
+    const result = { ...UI_DEFAULTS };
+    for (const row of rows) {
+      try { result[row.key] = JSON.parse(row.value); } catch { result[row.key] = row.value; }
+    }
+    return result;
+  } catch {
+    return UI_DEFAULTS;
+  }
+}
+
+export default async function RootLayout({ children }) {
+  const initialUISettings = await getUISettings();
   return (
     // suppressHydrationWarning: LanguageProvider updates lang/dir client-side
     // Default to Arabic (RTL) — matches the default language setting
@@ -60,7 +76,7 @@ export default function RootLayout({ children }) {
         `}} />
       </head>
       <body className="antialiased">
-        <Providers>
+        <Providers initialUISettings={initialUISettings}>
           <AffiliateRefCapture />
           <UtmTracker />
           <Suspense fallback={null}><TrackingCapture /></Suspense>

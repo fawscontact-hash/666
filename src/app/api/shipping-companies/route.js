@@ -1,3 +1,5 @@
+export const revalidate = 120; // shipping options change rarely — cache for 2 min
+
 /**
  * /api/shipping-companies
  * ─────────────────────────────────────────────────────────────────────────────

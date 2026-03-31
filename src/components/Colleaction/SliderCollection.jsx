@@ -23,12 +23,6 @@ export default function SliderCollection({ isTitle = true, collections = [] }) {
   return (
     <section>
       <div className="container mx-auto px-4 md:px-20">
-        {isTitle && (
-          <div>
-            <h2 className="text-lg md:text-2xl font-semibold mb-2 text-center">{sectionTitle}</h2>
-            <p className="text-center text-xs md:text-sm md:mb-8 mb-4">{sectionDescription}</p>
-          </div>
-        )}{" "}
         <Swiper
           modules={[Navigation, Pagination, Autoplay]}
           spaceBetween={20}

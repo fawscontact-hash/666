@@ -24,8 +24,14 @@ const UIControlContext = createContext({
   reload:  () => {},
 });
 
-export function UIControlProvider({ children }) {
-  const [settings, setSettings] = useState({ ...UI_DEFAULTS, _loaded: false });
+export function UIControlProvider({ children, initialSettings = null }) {
+  // If the server passed initialSettings (via layout.jsx), start _loaded: true → zero flicker.
+  // Otherwise fall back to all-true defaults and let the client fetch real values.
+  const [settings, setSettings] = useState(() =>
+    initialSettings
+      ? { ...UI_DEFAULTS, ...initialSettings, _loaded: true }
+      : { ...UI_DEFAULTS, _loaded: false }
+  );
 
   const reload = useCallback(() => {
     fetch("/api/ui-control")
@@ -34,7 +40,10 @@ export function UIControlProvider({ children }) {
       .catch(() => setSettings((s) => ({ ...s, _loaded: true })));
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  // Only fetch on the client when we didn't receive server-side initial settings
+  useEffect(() => {
+    if (!initialSettings) reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <UIControlContext.Provider value={{ ...settings, reload }}>

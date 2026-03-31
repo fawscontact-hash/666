@@ -21,12 +21,18 @@ function CartDrawerWrapper() {
   );
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialUISettings,
+}: {
+  children: React.ReactNode;
+  initialUISettings?: Record<string, unknown>;
+}) {
   return (
     <LanguageProvider>
       <HeroUIProvider>
         <SettingsProvider>
-          <UIControlProvider>
+          <UIControlProvider initialSettings={initialUISettings ?? null}>
             <HomepageProvider>
               <ProductsProvider>
                 <CartProvider>
