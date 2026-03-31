@@ -1,16 +1,22 @@
 "use client";
 
+/**
+ * Slider — Client Component
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Stays "use client" because Swiper requires browser APIs (touch, autoplay).
+ * BUT: receives data as props from the Server Component parent (page.jsx).
+ *
+ * BEFORE: useHomepage() context → waits for /api/homepage fetch → blank slider
+ * AFTER:  initialImages prop from server → slider renders immediately on load
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import React, { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import { Skeleton } from "@heroui/skeleton";
-import { useHomepage } from "@/context/HomepageContext";
-
-const COLLECTION       = "slider-image";
-const PROMO_COLLECTION = "promo-text";
 
 // ── YouTube helpers ───────────────────────────────────────────────────────────
 
@@ -28,10 +34,14 @@ function getYouTubeEmbedUrl(url) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function StyleOne() {
-  // Data comes from HomepageContext — no extra fetch needed
-  const { sliderImages: images, promoTexts, loading: isLoading } = useHomepage();
-  const swiperRef = useRef(null);
+/**
+ * @param {{ initialImages: any[], initialPromos: any[] }} props
+ * Data is passed as props from the Server Component — no fetch, no context.
+ */
+export default function StyleOne({ initialImages = [], initialPromos = [] }) {
+  const images     = initialImages;
+  const promoTexts = initialPromos;
+  const swiperRef  = useRef(null);
 
   // Pause autoplay while a video slide is active
   const handleSlideChange = (swiper) => {
@@ -43,18 +53,7 @@ export default function StyleOne() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full px-2 sm:px-4">
-        <Skeleton className="w-full h-[200px] md:h-[400px] lg:h-[500px] rounded-3xl" />
-      </div>
-    );
-  }
-
-  if (images.length === 0) {
-    if (error) console.error("Slider error:", error);
-    return null;
-  }
+  if (images.length === 0) return null;
 
   return (
     <div className="w-full">

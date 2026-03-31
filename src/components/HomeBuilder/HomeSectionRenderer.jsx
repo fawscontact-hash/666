@@ -1,24 +1,30 @@
 "use client";
 
+/**
+ * HomeSectionRenderer — Client Component (needed for CountdownTimer useState)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * BEFORE: fetched /api/setting?type=homepage_layout itself → blank screen
+ * AFTER:  receives `sections` + `products` + `collections` as props from
+ *         page.jsx (Server Component) — renders immediately on first paint.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
-// ── Critical above-fold components (loaded immediately) ───────────────────────
-import Slider            from "@/components/Slider/Slider";
-import ProductGrid       from "@/components/Product/ProductGrid";
-import { useLanguage }   from "@/context/LanguageContext";
+import Slider          from "@/components/Slider/Slider";
+import ProductGrid     from "@/components/Product/ProductGrid";
+import HomeCollectionSections, { SingleCollectionSection }
+  from "@/components/Colleaction/HomeCollectionSections";
 
-// ── Below-fold components (lazy loaded) ───────────────────────────────────────
-const SliderCollection  = dynamic(() => import("@/components/Colleaction/SliderCollection"), { ssr: false });
-const HomeCollectionSections = dynamic(() => import("@/components/Colleaction/HomeCollectionSections").then(m => ({ default: m.default })), { ssr: false });
-const SingleCollectionSection = dynamic(() => import("@/components/Colleaction/HomeCollectionSections").then(m => ({ default: m.SingleCollectionSection })), { ssr: false });
-const VideoReels        = dynamic(() => import("@/components/VideoReels"), { ssr: false });
-const ShoppableReels    = dynamic(() => import("@/components/ShoppableReels"), { ssr: false });
-const BeforeAfterSlider = dynamic(() => import("@/components/BeforeAfterSlider"), { ssr: false });
-const SupportBenefits   = dynamic(() => import("@/components/SupportBenefits"), { ssr: false });
-const HomeFeedbackSection = dynamic(() => import("@/components/HomeFeedbackSection"), { ssr: false });
+const SliderCollection    = dynamic(() => import("@/components/Colleaction/SliderCollection"),    { ssr: false });
+const VideoReels          = dynamic(() => import("@/components/VideoReels"),                      { ssr: false });
+const ShoppableReels      = dynamic(() => import("@/components/ShoppableReels"),                  { ssr: false });
+const BeforeAfterSlider   = dynamic(() => import("@/components/BeforeAfterSlider"),               { ssr: false });
+const SupportBenefits     = dynamic(() => import("@/components/SupportBenefits"),                 { ssr: false });
+const HomeFeedbackSection = dynamic(() => import("@/components/HomeFeedbackSection"),             { ssr: false });
 
-// ── Countdown section ─────────────────────────────────────────────────────────
+// ── Countdown (needs useState/useEffect — must stay client) ───────────────────
 function CountdownTimer({ targetDate }) {
   const calc = () => {
     const diff = new Date(targetDate) - new Date();
@@ -48,11 +54,12 @@ function CountdownTimer({ targetDate }) {
   );
 }
 
-// ── Hero section ──────────────────────────────────────────────────────────────
+// ── Section renderers ─────────────────────────────────────────────────────────
+
 function HeroSection({ data }) {
   return (
     <div className="relative w-full h-[280px] md:h-[480px] lg:h-[560px] overflow-hidden rounded-3xl mx-auto"
-      style={{ background: data.image ? undefined : "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" }}>
+      style={{ background: data.image ? undefined : "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)" }}>
       {data.image && (
         <>
           <img src={data.image} alt={data.title || "Hero"} className="absolute inset-0 w-full h-full object-cover" />
@@ -73,25 +80,23 @@ function HeroSection({ data }) {
   );
 }
 
-// ── Image banner ──────────────────────────────────────────────────────────────
 function ImageSection({ data }) {
   if (!data.url) return null;
   const img = <img src={data.url} alt={data.alt || ""} className="w-full object-cover rounded-3xl" loading="lazy" />;
   return data.link ? <a href={data.link}>{img}</a> : img;
 }
 
-// ── Video section ─────────────────────────────────────────────────────────────
 function VideoSection({ data }) {
   if (!data.url) return null;
   const isYT = data.url.includes("youtube.com") || data.url.includes("youtu.be");
   const ytId = isYT
     ? (data.url.match(/youtu\.be\/([^?]+)/) || data.url.match(/[?&]v=([^&]+)/))?.[1]
     : null;
-
   return (
     <div className="w-full rounded-3xl overflow-hidden bg-black aspect-video">
       {ytId ? (
-        <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${ytId}?autoplay=${data.autoplay ? 1 : 0}&mute=${data.muted ? 1 : 0}&loop=1&playlist=${ytId}`}
+        <iframe className="w-full h-full"
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=${data.autoplay ? 1 : 0}&mute=${data.muted ? 1 : 0}&loop=1&playlist=${ytId}`}
           allow="autoplay; encrypted-media" allowFullScreen />
       ) : (
         <video src={data.url} className="w-full h-full object-cover"
@@ -101,7 +106,6 @@ function VideoSection({ data }) {
   );
 }
 
-// ── Text block ────────────────────────────────────────────────────────────────
 function TextSection({ data }) {
   if (!data.content) return null;
   return (
@@ -110,7 +114,6 @@ function TextSection({ data }) {
   );
 }
 
-// ── CTA ───────────────────────────────────────────────────────────────────────
 function CtaSection({ data }) {
   return (
     <div className="rounded-3xl overflow-hidden px-8 py-12 text-center text-white"
@@ -127,7 +130,6 @@ function CtaSection({ data }) {
   );
 }
 
-// ── Countdown ─────────────────────────────────────────────────────────────────
 function CountdownSection({ data }) {
   if (!data.targetDate) return null;
   return (
@@ -139,7 +141,6 @@ function CountdownSection({ data }) {
   );
 }
 
-// ── Contact ───────────────────────────────────────────────────────────────────
 function ContactSection({ data }) {
   return (
     <div className="bg-white rounded-3xl border border-gray-200 px-6 py-8 text-center max-w-lg mx-auto shadow-sm">
@@ -153,80 +154,67 @@ function ContactSection({ data }) {
   );
 }
 
-// ── Products section ──────────────────────────────────────────────────────────
-function ProductsSection({ data }) {
-  return (
-    <div>
-      {data.title && <h2 className="text-xl md:text-2xl font-bold text-center mb-6 text-gray-900">{data.title}</h2>}
-      <ProductGrid />
-    </div>
-  );
-}
-
-// ── Section map ───────────────────────────────────────────────────────────────
-const RENDERERS = {
-  hero:               ({ data }) => <HeroSection data={data} />,
-  slider:             ()         => <Slider />,
-  collection_slider:  ()         => <SliderCollection />,
-  products:           ({ data }) => <ProductsSection data={data} />,
-  collection_section: ({ data }) => data?.collectionTitle || data?.collectionId
-    ? <SingleCollectionSection
-        collectionTitle={data.collectionTitle}
-        collectionId={data.collectionId}
-        productLimit={data.productLimit || 8}
-        customTitle={data.customTitle || ""}
-        showViewMore={data.showViewMore !== false}
-      />
-    : <HomeCollectionSections />,
-  image:              ({ data }) => <ImageSection data={data} />,
-  video:              ({ data }) => <VideoSection data={data} />,
-  text:               ({ data }) => <TextSection data={data} />,
-  cta:                ({ data }) => <CtaSection data={data} />,
-  countdown:          ({ data }) => <CountdownSection data={data} />,
-  reviews:            ()         => <HomeFeedbackSection />,
-  support:            ()         => <SupportBenefits />,
-  reels:              ()         => <VideoReels />,
-  shoppable_reels:    ({ data }) => <ShoppableReels title={data?.title || "In Action"} />,
-  before_after:       ({ data }) => <BeforeAfterSlider title={data?.title || ""} />,
-  contact:            ({ data }) => <ContactSection data={data} />,
-};
-
+// ── Section padding map ───────────────────────────────────────────────────────
 const PADDING = {
-  hero: "px-2 sm:px-4",
-  slider: "",
-  image: "px-2 sm:px-4",
-  cta: "px-4",
-  countdown: "px-4",
-  contact: "px-4",
-  text: "px-4",
-  video: "px-4",
-  products: "",
-  collection_slider: "",
-  collection_section: "",
-  reviews: "",
-  support: "",
-  before_after: "",
-  reels: "",
-  shoppable_reels: "",
+  hero: "px-2 sm:px-4", slider: "", image: "px-2 sm:px-4",
+  cta: "px-4", countdown: "px-4", contact: "px-4", text: "px-4",
+  video: "px-4", products: "", collection_slider: "", collection_section: "",
+  reviews: "", support: "", before_after: "", reels: "", shoppable_reels: "",
 };
 
-// ── Main renderer ─────────────────────────────────────────────────────────────
-export default function HomeSectionRenderer() {
-  const [sections, setSections] = useState(null);
+// ── Main renderer (accepts props from page.jsx Server Component) ──────────────
 
-  useEffect(() => {
-    fetch("/api/setting?type=homepage_layout", { next: { revalidate: 60 } })
-      .then(r => r.ok ? r.json() : {})
-      .then(d => setSections(Array.isArray(d?.sections) ? d.sections : null))
-      .catch(() => setSections(null));
-  }, []);
+export default function HomeSectionRenderer({
+  sections     = [],
+  products     = [],
+  collections  = [],
+  allCollections = [],
+  sliderImages = [],
+  promoTexts   = [],
+}) {
+  if (!sections.length) return null;
 
-  // null = loading or no custom layout → homepage uses default layout
-  if (sections === null) return null;
+  // Build section renderers with access to passed props
+  const RENDERERS = {
+    hero:               ({ data }) => <HeroSection data={data} />,
+    slider:             ()         => <Slider initialImages={sliderImages} initialPromos={promoTexts} />,
+    collection_slider:  ()         => <SliderCollection collections={allCollections} />,
+    products:           ({ data }) => (
+      <div>
+        {data.title && <h2 className="text-xl md:text-2xl font-bold text-center mb-6 text-gray-900">{data.title}</h2>}
+        <ProductGrid products={products} />
+      </div>
+    ),
+    collection_section: ({ data }) =>
+      data?.collectionTitle || data?.collectionId ? (
+        <SingleCollectionSection
+          collectionTitle={data.collectionTitle}
+          collectionId={data.collectionId}
+          productLimit={data.productLimit || 8}
+          customTitle={data.customTitle || ""}
+          showViewMore={data.showViewMore !== false}
+          products={products}
+          collections={allCollections}
+        />
+      ) : (
+        <HomeCollectionSections products={products} collections={collections} />
+      ),
+    image:           ({ data }) => <ImageSection data={data} />,
+    video:           ({ data }) => <VideoSection data={data} />,
+    text:            ({ data }) => <TextSection data={data} />,
+    cta:             ({ data }) => <CtaSection data={data} />,
+    countdown:       ({ data }) => <CountdownSection data={data} />,
+    reviews:         ()         => <HomeFeedbackSection />,
+    support:         ()         => <SupportBenefits />,
+    reels:           ()         => <VideoReels />,
+    shoppable_reels: ({ data }) => <ShoppableReels title={data?.title || "In Action"} />,
+    before_after:    ({ data }) => <BeforeAfterSlider title={data?.title || ""} />,
+    contact:         ({ data }) => <ContactSection data={data} />,
+  };
 
   return (
     <div className="space-y-10 md:space-y-16 pb-10">
-      {sections.filter(s => s.visible !== false).map(sec => {
+      {sections.filter((s) => s.visible !== false).map((sec) => {
         const Renderer = RENDERERS[sec.type];
         if (!Renderer) return null;
         const pad = PADDING[sec.type] ?? "px-4";
