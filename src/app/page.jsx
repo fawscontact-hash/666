@@ -11,22 +11,13 @@ import { getAllProducts }          from "@/lib/services/productService";
 import { getHomepageCollections, getAllCollections } from "@/lib/services/collectionService";
 import { getItems }                from "@/lib/services/contentService";
 import { getSettings }             from "@/lib/services/settingsService";
-import dynamic from "next/dynamic";
-
 // ── Critical above-fold — SSR'd with content ──────────────────────────────────
 import Slider                from "@/components/Slider/Slider";
 import ProductGrid           from "@/components/Product/ProductGrid";
 import HomeCollectionSections from "@/components/Colleaction/HomeCollectionSections";
-
-// ── Below-fold — lazy loaded after first paint ────────────────────────────────
-const HomeSectionRenderer = dynamic(
-  () => import("@/components/HomeBuilder/HomeSectionRenderer"),
-  { ssr: false }
-);
-const SliderCollection    = dynamic(() => import("@/components/Colleaction/SliderCollection"), { ssr: false });
-const VideoReels          = dynamic(() => import("@/components/VideoReels"),          { ssr: false });
-const SupportBenefits     = dynamic(() => import("@/components/SupportBenefits"),     { ssr: false });
-const HomeFeedbackSection = dynamic(() => import("@/components/HomeFeedbackSection"), { ssr: false });
+import SliderCollection      from "@/components/Colleaction/SliderCollection";
+import HomeBelowFold         from "@/components/HomeBelowFold";
+import HomeSectionRenderer   from "@/components/HomeBuilder/HomeSectionRenderer";
 
 // ISR — page is rebuilt every 60 s in the background (no cold starts for users)
 export const revalidate = 60;
@@ -107,9 +98,7 @@ export default async function Home() {
       {/* Server Component — collections + products pre-rendered */}
       <HomeCollectionSections products={products} collections={collections} />
 
-      <VideoReels />
-      <SupportBenefits />
-      <HomeFeedbackSection />
+      <HomeBelowFold />
     </div>
   );
 }
