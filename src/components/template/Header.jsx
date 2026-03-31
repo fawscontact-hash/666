@@ -13,7 +13,7 @@ import { useSetting } from "@/context/SettingsContext";
 import { useHomepage } from "@/context/HomepageContext";
 import LanguageSwitcher from "@/components/template/LanguageSwitcher";
 
-export default function FullHeader() {
+export default function FullHeader({ initialStoreSettings = null }) {
   const ui = useUIControl();
   const { t, dir } = useLanguage();
   const isRTL = dir === "rtl";
@@ -21,10 +21,19 @@ export default function FullHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { menuItems, storeSettings: homepageStore } = useHomepage();
   const { data: settingsStoreData } = useSetting("store");
-  // Prefer HomepageContext data (already fetched); fall back to SettingsContext
-  const storeSettings = homepageStore && Object.keys(homepageStore).length > 0
-    ? homepageStore
-    : settingsStoreData;
+
+  // Priority chain — highest to lowest:
+  //   1. Live data from HomepageContext (refreshed after client fetch)
+  //   2. Live data from SettingsContext  (refreshed after client fetch)
+  //   3. initialStoreSettings from Server Component (correct on FIRST render)
+  //
+  // Without #3, both contexts start empty/null → logo is absent on first paint
+  // → flash occurs when contexts hydrate.  With #3, the logo is correct from
+  // the very first byte delivered to the browser.
+  const liveSettings =
+    (homepageStore && Object.keys(homepageStore).length > 0) ? homepageStore
+    : settingsStoreData ?? null;
+  const storeSettings = liveSettings ?? initialStoreSettings;
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);

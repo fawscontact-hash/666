@@ -10,9 +10,13 @@ import TrackingCapture from "@/components/tracking/TrackingCapture";
 import SpinWheelProvider from "@/components/SpinWheel/SpinWheelProvider";
 import GiftSystemInit from "@/components/GiftSystem/GiftSystemInit";
 import { getStoreSettings } from "@/lib/getStoreSettings";
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 import prisma from "@/lib/prisma";
 import { UI_DEFAULTS } from "@/lib/ui-defaults";
+
+// React.cache() deduplicates the DB call so generateMetadata and RootLayout
+// share ONE result per request — no double DB round-trip.
+const getCachedStoreSettings = cache(getStoreSettings);
 
 // Rubik supports both Latin and Arabic scripts — load both subsets
 const rubik = Rubik({
@@ -23,7 +27,7 @@ const rubik = Rubik({
 
 // Generate metadata dynamically from store settings
 export async function generateMetadata() {
-  const settings = await getStoreSettings();
+  const settings = await getCachedStoreSettings();
   
   return {
     title: settings?.storeName || "Shop Gold - Online Shopping Experience",
@@ -48,7 +52,11 @@ async function getUISettings() {
 }
 
 export default async function RootLayout({ children }) {
-  const initialUISettings = await getUISettings();
+  // Both calls hit the cache — only ONE DB round-trip total
+  const [initialUISettings, initialStoreSettings] = await Promise.all([
+    getUISettings(),
+    getCachedStoreSettings(),
+  ]);
   return (
     // suppressHydrationWarning: LanguageProvider updates lang/dir client-side
     // Default to Arabic (RTL) — matches the default language setting
@@ -81,7 +89,7 @@ export default async function RootLayout({ children }) {
           <UtmTracker />
           <Suspense fallback={null}><TrackingCapture /></Suspense>
           <ScriptInjector />
-          <MainHeaderWrapper />
+          <MainHeaderWrapper storeSettings={initialStoreSettings} />
           {children}
           <MainFooterWrapper />
           <SpinWheelProvider />
