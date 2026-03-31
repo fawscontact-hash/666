@@ -15,7 +15,7 @@
  */
 
 import { useEffect } from "react";
-import { useProducts } from "@/context/ProductsContext";
+import { useHomepage } from "@/context/HomepageContext";
 
 function getImageUrl(images) {
   if (!images) return "";
@@ -29,7 +29,7 @@ function getImageUrl(images) {
 }
 
 export default function GiftSystemInit() {
-  const contextProducts = useProducts();
+  const { products: contextProducts } = useHomepage();
 
   useEffect(() => {
     let gifts = [];

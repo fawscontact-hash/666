@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDiscountRules } from "@/hooks/useDiscountRules";
-import { useProducts } from "@/context/ProductsContext";
+import { useHomepage } from "@/context/HomepageContext";
 
 // ── Product Card ──────────────────────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ function CollectionSection({ collection, allProducts, formatPrice, t, getDiscoun
 // Renders products from ONE specific collection by title.
 
 export function SingleCollectionSection({ collectionTitle, collectionId, productLimit = 8, customTitle = "", showViewMore = true }) {
-  const allProducts = useProducts();
+  const { products: allProducts, collections: allCollections } = useHomepage();
   const [collection,  setCollection]  = useState(null);
   const [loading,     setLoading]     = useState(true);
   const { formatPrice, t } = useLanguage();
@@ -126,18 +126,14 @@ export function SingleCollectionSection({ collectionTitle, collectionId, product
 
   useEffect(() => {
     if (!collectionTitle && !collectionId) { setLoading(false); return; }
-    fetch("/api/collection", { next: { revalidate: 60 } })
-      .then(r => r.ok ? r.json() : [])
-      .then((cols) => {
-        const col = cols.find(c =>
-          (collectionId && (c._id || c.id) === collectionId) ||
-          (collectionTitle && c.title.toLowerCase() === collectionTitle.toLowerCase())
-        );
-        setCollection(col || null);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [collectionTitle, collectionId]);
+    // Use collections already loaded from HomepageContext — no extra fetch
+    const col = allCollections.find(c =>
+      (collectionId && (c._id || c.id) === collectionId) ||
+      (collectionTitle && c.title.toLowerCase() === collectionTitle.toLowerCase())
+    );
+    setCollection(col || null);
+    setLoading(false);
+  }, [collectionTitle, collectionId, allCollections]);
 
   if (loading) return null;
   if (!collection) return null;
@@ -193,18 +189,10 @@ export function SingleCollectionSection({ collectionTitle, collectionId, product
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function HomeCollectionSections() {
-  const allProducts = useProducts();
-  const [collections,  setCollections]  = useState([]);
-  const [loading,      setLoading]      = useState(true);
+  // All data from HomepageContext — zero extra fetches
+  const { products: allProducts, collections, loading } = useHomepage();
   const { formatPrice, t } = useLanguage();
   const { getDiscount } = useDiscountRules();
-
-  useEffect(() => {
-    fetch("/api/collection?homepage=true", { next: { revalidate: 60 } })
-      .then(r => r.ok ? r.json() : [])
-      .then(setCollections)
-      .catch(e => console.error("HomeCollectionSections fetch error:", e))
-      .finally(() => setLoading(false));
   }, []);
 
   if (loading || collections.length === 0) return null;

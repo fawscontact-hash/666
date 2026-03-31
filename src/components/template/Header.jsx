@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useUIControl } from "@/hooks/useUIControl";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSetting } from "@/context/SettingsContext";
+import { useHomepage } from "@/context/HomepageContext";
 import LanguageSwitcher from "@/components/template/LanguageSwitcher";
 
 export default function FullHeader() {
@@ -18,8 +19,12 @@ export default function FullHeader() {
   const isRTL = dir === "rtl";
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuItems, setMenuItems] = useState([]);
-  const { data: storeSettings } = useSetting("store"); // from shared SettingsContext — no extra fetch
+  const { menuItems, storeSettings: homepageStore } = useHomepage();
+  const { data: settingsStoreData } = useSetting("store");
+  // Prefer HomepageContext data (already fetched); fall back to SettingsContext
+  const storeSettings = homepageStore && Object.keys(homepageStore).length > 0
+    ? homepageStore
+    : settingsStoreData;
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,22 +41,8 @@ export default function FullHeader() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const menuRes = await fetch("/api/data?collection=menu-item", { next: { revalidate: 300 } });
-        if (menuRes.ok) {
-          const menuData = await menuRes.json();
-          const sorted = [...menuData].sort((a, b) => (a.position ?? 9999) - (b.position ?? 9999));
-          setMenuItems(sorted);
-        }
-      } catch (err) {
-        console.error("Failed to load menu:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+    // menuItems come from HomepageContext — no fetch needed here
+    setIsLoading(false);
     updateWishlistCount();
     updateCartCount();
 

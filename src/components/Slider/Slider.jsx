@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Skeleton } from "@heroui/skeleton";
+import { useHomepage } from "@/context/HomepageContext";
 
 const COLLECTION       = "slider-image";
 const PROMO_COLLECTION = "promo-text";
@@ -28,47 +29,9 @@ function getYouTubeEmbedUrl(url) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function StyleOne() {
-  const [images,     setImages]     = useState([]);
-  const [promoTexts, setPromoTexts] = useState([]);
-  const [isLoading,  setIsLoading]  = useState(true);
-  const [error,      setError]      = useState(null);
+  // Data comes from HomepageContext — no extra fetch needed
+  const { sliderImages: images, promoTexts, loading: isLoading } = useHomepage();
   const swiperRef = useRef(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [sliderRes, promoRes] = await Promise.all([
-          fetch(`/api/data?collection=${COLLECTION}`,       { next: { revalidate: 300 } }),
-          fetch(`/api/data?collection=${PROMO_COLLECTION}`, { next: { revalidate: 300 } }),
-        ]);
-
-        const sliderData = await sliderRes.json();
-        const promoData  = await promoRes.json();
-
-        if (sliderRes.ok) {
-          const sorted = sliderData
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .filter((s) => s.active !== false); // only show active (ON) slides
-          setImages(sorted);
-        }
-
-        if (promoRes.ok && promoData.length > 0) {
-          setPromoTexts(promoData.filter((item) => item.status === "Active"));
-        } else {
-          setPromoTexts([]);
-        }
-      } catch (err) {
-        console.error("Error fetching slider data:", err);
-        setError("Failed to load data");
-        setPromoTexts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   // Pause autoplay while a video slide is active
   const handleSlideChange = (swiper) => {

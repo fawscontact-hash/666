@@ -8,12 +8,11 @@ import { Button } from "@heroui/react";
 import { useCart } from "@/hooks/useCart";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDiscountRules } from "@/hooks/useDiscountRules";
-import { useProducts } from "@/context/ProductsContext";
+import { useHomepage } from "@/context/HomepageContext";
 
 export default function StyleOne() {
-  const allProducts = useProducts();
-  const products = allProducts; // already loaded from shared context
-  const loading = allProducts.length === 0;
+  const { products: allProducts, loading } = useHomepage();
+  const products = allProducts;
   const [wishlist, setWishlist] = useState([]);
   const { addToCart, isAddingToCart } = useCart();
   const { t, formatPrice } = useLanguage();
