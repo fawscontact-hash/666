@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "autoVerify": false,
+  "configurations": [
+    {
+      "name": "architecture-diagram",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [".claude/diagram/server.js"],
+      "port": 4000
+    },
+    {
+      "name": "nextjs-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "--turbopack"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
