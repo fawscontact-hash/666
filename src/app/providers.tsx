@@ -24,12 +24,14 @@ function CartDrawerWrapper() {
 export function Providers({
   children,
   initialUISettings,
+  initialLang,
 }: {
   children: React.ReactNode;
   initialUISettings?: Record<string, unknown>;
+  initialLang?: string;
 }) {
   return (
-    <LanguageProvider>
+    <LanguageProvider initialLang={initialLang}>
       <HeroUIProvider>
         <SettingsProvider>
           <UIControlProvider initialSettings={initialUISettings ?? null}>

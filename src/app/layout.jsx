@@ -13,6 +13,10 @@ import { getStoreSettings } from "@/lib/getStoreSettings";
 import { Suspense, cache } from "react";
 import prisma from "@/lib/prisma";
 import { UI_DEFAULTS } from "@/lib/ui-defaults";
+import { cookies } from "next/headers";
+
+const SUPPORTED_LANGS = ["ar", "fr"];
+const DEFAULT_LANG    = "ar";
 
 // React.cache() deduplicates the DB call so generateMetadata and RootLayout
 // share ONE result per request — no double DB round-trip.
@@ -52,22 +56,31 @@ async function getUISettings() {
 }
 
 export default async function RootLayout({ children }) {
+  // Read the language cookie so the server renders in the correct language.
+  // This eliminates the Arabic→French flicker: the HTML response already
+  // contains French text, so React's first client render matches exactly.
+  const cookieStore    = await cookies();
+  const cookieLang     = cookieStore.get("store_lang")?.value;
+  const initialLang    = SUPPORTED_LANGS.includes(cookieLang) ? cookieLang : DEFAULT_LANG;
+  const initialDir     = initialLang === "ar" ? "rtl" : "ltr";
+
   // Both calls hit the cache — only ONE DB round-trip total
   const [initialUISettings, initialStoreSettings] = await Promise.all([
     getUISettings(),
     getCachedStoreSettings(),
   ]);
   return (
-    // suppressHydrationWarning: LanguageProvider updates lang/dir client-side
-    // Default to Arabic (RTL) — matches the default language setting
-    <html lang="ar" dir="rtl" className={rubik.variable} suppressHydrationWarning>
+    // suppressHydrationWarning: kept as safety net for the one-time case where
+    // cookie doesn't exist yet and the inline script corrects lang/dir client-side.
+    <html lang={initialLang} dir={initialDir} className={rubik.variable} suppressHydrationWarning>
       <head>
         {/*
-          Blocking inline script — runs synchronously before the body renders.
-          Reads the saved language from localStorage and writes it onto <html>
-          as a data-lang attribute. LanguageContext reads this attribute in its
-          lazy useState initializer, so the very first client render uses the
-          correct language instead of the Arabic default.
+          Blocking inline script — runs synchronously before any paint.
+          PRIMARY JOB: sync localStorage → cookie so the NEXT server request
+          renders in the correct language (handles the first-visit gap when
+          no cookie exists yet but localStorage has the user's preference).
+          SECONDARY JOB: keep data-lang / lang / dir correct for the current
+          request as a safety net.
         */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
@@ -78,13 +91,15 @@ export default async function RootLayout({ children }) {
                 h.setAttribute('data-lang', l);
                 h.setAttribute('lang', l);
                 h.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+                // Sync to cookie — server reads this on the NEXT request
+                document.cookie = 'store_lang=' + l + '; path=/; max-age=31536000; SameSite=Lax';
               }
             } catch(e) {}
           })();
         `}} />
       </head>
       <body className="antialiased">
-        <Providers initialUISettings={initialUISettings}>
+        <Providers initialUISettings={initialUISettings} initialLang={initialLang}>
           <AffiliateRefCapture />
           <UtmTracker />
           <Suspense fallback={null}><TrackingCapture /></Suspense>
